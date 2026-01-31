@@ -43,23 +43,26 @@ public class WeaponLogic : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            Shoot();
+            PlayerShoot();
         }
 
     }
-    void Shoot()
+    void PlayerShoot()
     {
-        //muzzleFlash.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        //muzzleFlash.Play();
         RaycastHit hit;
+        // Shoot from the Main Camera's center
         if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, range))
         {
+            // Look for the EnemyAI script on the object we hit
+            navEnemy enemy = hit.transform.GetComponent<navEnemy>();
             Debug.Log("Hit: " + hit.transform.name);
-            // damage logic here
-            enemytarget target = hit.transform.GetComponent<enemytarget>();
-            if (target != null)
+            if (enemy != null)
             {
-                target.TakeDamage(damage);
+                // Apply damage to the enemy
+                enemy.TakeDamage(damage); // Replace 25f with your weapon damage variable
+
+                // Optional: Add impact effect particle here
+                
             }
         }
     }
