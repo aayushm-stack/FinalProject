@@ -58,12 +58,12 @@ public class Player : MonoBehaviour
 
         controller.Move(velocity * Time.deltaTime);
 
-        //Vector3 horizontalVelocity = new Vector3(controller.velocity.x, 0f, controller.velocity.z);
-        //if(horizontalVelocity.magnitude>0f)
-        if (lastPosition != gameObject.transform.position && isGrounded == true)
-            isMoving = false;
-        else
+        Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
+        if (horizontalVelocity.magnitude > 0f && isGrounded)
+            //if (lastPosition != gameObject.transform.position && isGrounded == true)
             isMoving = true;
+        else
+            isMoving = false;
 
         lastPosition=gameObject.transform.position;
 
@@ -92,6 +92,7 @@ public class Player : MonoBehaviour
             Debug.Log("Bomb Area Reached!");
             bombsPlanted++;
             ShowMessage();
+            Destroy(other.gameObject);
         }
         
         if (other.CompareTag("Ammo"))
