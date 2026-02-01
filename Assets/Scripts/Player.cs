@@ -1,19 +1,24 @@
-using UnityEngine;
 using System.Collections;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
     public float speed = 12f, gravity = 9.81f, jumpHeight = 3f;
-    public Transform groundCheck;
-    public float groundDistance = 0.4f;
-    public LayerMask groundMask;
+    
     Vector3 velocity;
-    bool isGrounded, isMoving;
+    bool isGrounded, isMoving=false;
     private Vector3 lastPosition = new Vector3(0f, 0f, 0f);
     private CharacterController controller;
     public Transform cameraTransform;
     public float health = 100f;
-
+    private int bombsPlanted = 0;
+    [Header("UI Settings")]
+    public float autoHideTime = 0f;
+    public TextMeshProUGUI centerText;
+    public AudioSource footstepsAudio;
+    [TextArea] public string message = "BOMB PLANTED"; // Custom message for this specific collider
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -31,9 +36,9 @@ public class Player : MonoBehaviour
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
 
-        //Vector3 move = transform.right*x + transform.forward*z;
+        //Camera initial --- Vector3 move = transform.right*x + transform.forward*z;
 
-        Vector3 forward = cameraTransform.forward; // to move in direction of camera view
+        Vector3 forward = cameraTransform.forward; 
         Vector3 right = cameraTransform.right;
         forward.y = 0f;
         right.y = 0f;
@@ -41,7 +46,7 @@ public class Player : MonoBehaviour
         
         controller.Move(move * speed * Time.deltaTime);
 
-        if (Input.GetButtonDown("Jump") && isGrounded)  //appyling jump to player body
+        if (Input.GetButtonDown("Jump") && isGrounded) 
             velocity.y = Mathf.Sqrt(jumpHeight * 2f * gravity);
 
         velocity.y -= gravity * Time.deltaTime;
@@ -49,18 +54,57 @@ public class Player : MonoBehaviour
         controller.Move(velocity * Time.deltaTime);
 
         if (lastPosition != gameObject.transform.position && isGrounded == true)
-            isMoving = true;
-        else
             isMoving = false;
+        else
+            isMoving = true;
 
         lastPosition=gameObject.transform.position;
 
         if (isMoving)
         {
+            footstepsAudio.Play();
+        }
 
+        if (bombsPlanted == 2)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            Invoke("LoadScene", autoHideTime);
+        }
+    }
+    void LoadScene()
+    {
+        SceneManager.LoadScene("LastScene");
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Finish"))
+        {
+            Debug.Log("Bomb Area Reached!");
+            bombsPlanted++;
+            
+            ShowMessage();
+        }
+    }
+    void ShowMessage()
+    {
+        if (centerText != null)
+        {
+            centerText.text = message;
+            centerText.enabled = true; 
+
+            if (autoHideTime > 0)
+            {
+                Invoke("HideMessage", autoHideTime);
+            }
         }
     }
 
+    void HideMessage()
+    {
+        if (centerText != null) centerText.text = "";
+    }
     public void TakeDamage(float amount)
     {
         health -= amount;

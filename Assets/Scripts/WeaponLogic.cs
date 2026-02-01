@@ -2,11 +2,10 @@ using UnityEngine;
 using System.Collections;
 public class WeaponLogic : MonoBehaviour
 {
-    //variables for camera movement on right click
+    
     public Transform hipPosition;
     public Transform adsPosition;
 
-    //public float aimSpeed = 10f;
     private bool isAiming;
 
     public float smoothTime = 0.08f;
@@ -15,10 +14,9 @@ public class WeaponLogic : MonoBehaviour
 
     public float hipFOV = 60f;
     public float adsFOV = 30f;
-
+    public AudioSource voiceOverSource;
     //now for shoot
     public float damage = 10f, range = 100f;
-    //public ParticleSystem muzzleFlash;
     void LateUpdate()
     {
         isAiming = Input.GetMouseButton(1);
@@ -49,19 +47,18 @@ public class WeaponLogic : MonoBehaviour
     }
     void PlayerShoot()
     {
+        //audio
+        voiceOverSource.Play();
         RaycastHit hit;
-        // Shoot from the Main Camera's center
+        
         if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, range))
         {
-            // Look for the EnemyAI script on the object we hit
-            navEnemy enemy = hit.transform.GetComponent<navEnemy>();
+            
+            Enemy enemy = hit.transform.GetComponent<Enemy>();
             Debug.Log("Hit: " + hit.transform.name);
             if (enemy != null)
             {
-                // Apply damage to the enemy
-                enemy.TakeDamage(damage); // Replace 25f with your weapon damage variable
-
-                // Optional: Add impact effect particle here
+                enemy.TakeDamage(damage); 
                 
             }
         }
