@@ -1,5 +1,6 @@
-using UnityEngine;
 using System.Collections;
+using TMPro;
+using UnityEngine;
 public class WeaponLogic : MonoBehaviour
 {
     
@@ -17,6 +18,21 @@ public class WeaponLogic : MonoBehaviour
     public AudioSource voiceOverSource;
     //now for shoot
     public float damage = 10f, range = 100f;
+    
+    public int currentAmmo = 30;       // Starting bullets
+    
+
+    private float autoHideTime=3f;
+
+    [Header("UI Reference")]
+    public TextMeshProUGUI ammoText;
+    public TextMeshProUGUI OutOfAmmoText;
+
+    void Start()
+    {
+        UpdateAmmoUI();
+        
+    }
     void LateUpdate()
     {
         isAiming = Input.GetMouseButton(1);
@@ -41,7 +57,7 @@ public class WeaponLogic : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            PlayerShoot();
+            Fire();
         }
 
     }
@@ -63,5 +79,39 @@ public class WeaponLogic : MonoBehaviour
             }
         }
     }
-
+    void Fire()
+    {
+        
+        if (currentAmmo > 0)
+        {
+            PlayerShoot();
+            currentAmmo--;
+            UpdateAmmoUI();
+        }
+        else
+        {
+            ShowMessage();
+        }
+    }
+    void ShowMessage()
+    {
+        if (OutOfAmmoText != null)
+        {
+            OutOfAmmoText.text = "Out of Ammunition !";
+            OutOfAmmoText.enabled = true;
+            Invoke("HideMessage", autoHideTime);
+        }
+    }
+    void HideMessage()
+    {
+        OutOfAmmoText.enabled=false;
+    }
+    
+    public void UpdateAmmoUI()
+    {
+        if (ammoText != null)
+        { 
+            ammoText.text = "Ammo Count: " + currentAmmo;
+        }
+    }
 }

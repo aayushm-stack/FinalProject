@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -19,6 +20,10 @@ public class Player : MonoBehaviour
     public TextMeshProUGUI centerText;
     public AudioSource footstepsAudio;
     [TextArea] public string message = "BOMB PLANTED"; // Custom message for this specific collider
+
+    public int maxAmmo = 100;          // Maximum limit
+    public int ammoGainPerCrate = 20;  // How much 1 crate gives
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -53,6 +58,8 @@ public class Player : MonoBehaviour
 
         controller.Move(velocity * Time.deltaTime);
 
+        //Vector3 horizontalVelocity = new Vector3(controller.velocity.x, 0f, controller.velocity.z);
+        //if(horizontalVelocity.magnitude>0f)
         if (lastPosition != gameObject.transform.position && isGrounded == true)
             isMoving = false;
         else
@@ -77,14 +84,26 @@ public class Player : MonoBehaviour
     {
         SceneManager.LoadScene("LastScene");
     }
-    private void OnTriggerEnter(Collider other)
+    public WeaponLogic weapon;
+    void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Finish"))
         {
             Debug.Log("Bomb Area Reached!");
             bombsPlanted++;
-            
             ShowMessage();
+        }
+        
+        if (other.CompareTag("Ammo"))
+        {
+            
+            Debug.Log("Ammo Crate Collected!");
+            weapon.currentAmmo += ammoGainPerCrate;
+            if (weapon.currentAmmo > maxAmmo) weapon.currentAmmo = maxAmmo;
+
+            weapon.UpdateAmmoUI();
+
+            Destroy(other.gameObject);
         }
     }
     void ShowMessage()
