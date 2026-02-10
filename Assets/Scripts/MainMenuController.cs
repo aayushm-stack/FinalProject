@@ -1,31 +1,24 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; 
+using UnityEngine.SceneManagement;
 using TMPro;
-
 public class MainMenuController : MonoBehaviour
 {
     [Header("UI References")]
     public TextMeshProUGUI soundButtonText; 
-
     private bool isSoundOn = true;
-
     void Start()
     {
         isSoundOn = true;
         AudioListener.volume = 1f;
         UpdateSoundText();
     }
-
     public void PlayGame()
     {
         SceneManager.LoadScene("StoryScene");
     }
-
-    
     public void ToggleSound()
     {
         isSoundOn = !isSoundOn;
-
         if (isSoundOn)
         {
             AudioListener.volume = 1f; // Unmute
@@ -49,6 +42,7 @@ public class MainMenuController : MonoBehaviour
 
     public void QuitGame()
     {
+        
         Application.Quit();
         Debug.Log("Game Quit!");
 #if UNITY_EDITOR

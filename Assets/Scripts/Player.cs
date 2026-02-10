@@ -3,13 +3,16 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;                 // Required for Volumes
+using UnityEngine.Rendering.Universal;
 
 public class Player : MonoBehaviour
 {
     public float speed = 12f, gravity = 9.81f, jumpHeight = 3f;
     
     Vector3 velocity;
-    bool isGrounded, isMoving=false;
+    bool isGrounded;
+    //bool isMoving=false;
     private Vector3 lastPosition = new Vector3(0f, 0f, 0f);
     private CharacterController controller;
     public Transform cameraTransform;
@@ -18,16 +21,30 @@ public class Player : MonoBehaviour
     [Header("UI Settings")]
     public float autoHideTime = 0f;
     public TextMeshProUGUI centerText;
-    public AudioSource footstepsAudio;
-    [TextArea] public string message = "BOMB PLANTED"; // Custom message for this specific collider
-
+    public TextMeshProUGUI healthText;
+    [Header("Footstep Settings")]
+    public AudioSource footstepAudio; // Drag your AudioSource here
+    public float stepRate = 0.5f;     // Delay between steps (0.5 = walking, 0.3 = running)
+    private float nextStepTime = 0f;  // Internal timer
+    [TextArea] public string BombMessage = "Bomb Location reached !"; // Custom message for this specific collider
+    public string AmmoMessage = "Ammunition Found !";
+    public string HealthPackMessage = "Health Pack Found !";
     public int maxAmmo = 100;          // Maximum limit
+    public int maxHealth = 100;
     public int ammoGainPerCrate = 20;  // How much 1 crate gives
+    [Header("ScreenFader")]
+    public Volume globalVolume;
+    private Vignette _vignette;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        controller=GetComponent<CharacterController>();
+        if (globalVolume.profile.TryGet(out Vignette v))
+        {
+            _vignette = v;
+        }
+        controller =GetComponent<CharacterController>();
+        UpdateHealthUI();
     }
 
     // Update is called once per frame
@@ -57,30 +74,52 @@ public class Player : MonoBehaviour
         velocity.y -= gravity * Time.deltaTime;
 
         controller.Move(velocity * Time.deltaTime);
+        HandleFootsteps();
+        //Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
+        //if (horizontalVelocity.magnitude > 0.01f && isGrounded)
+        ////if (lastPosition == gameObject.transform.position && isGrounded == true)
+        //    isMoving = true;
+        //else
+        //    isMoving = false;
 
-        Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
-        if (horizontalVelocity.magnitude > 0f && isGrounded)
-            //if (lastPosition != gameObject.transform.position && isGrounded == true)
-            isMoving = true;
-        else
-            isMoving = false;
+        //lastPosition=gameObject.transform.position;
 
-        lastPosition=gameObject.transform.position;
-
-        if (isMoving)
-        {
-            footstepsAudio.Play();
-        }
+        
 
         if (bombsPlanted == 2)
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            Invoke("LoadScene", autoHideTime);
+            Invoke("LoadSuccessScene", autoHideTime);
         }
     }
-    void LoadScene()
+    void HandleFootsteps()
+    {
+        // 1. Get only WASD / Joystick input (Ignoring Mouse X/Y)
+        float inputX = Input.GetAxis("Horizontal"); // A / D keys
+        float inputZ = Input.GetAxis("Vertical");   // W / S keys
+
+        // 2. Combine them to see if we are pressing anything
+        // We use magnitude to check if the combined input is significant
+        float inputMagnitude = new Vector2(inputX, inputZ).sqrMagnitude;
+
+        // 3. The Logic Check
+        // Condition A: Are we pressing keys? (magnitude > 0.1f)
+        // Condition B: Are we on the ground? (isGrounded)
+        // Condition C: Has enough time passed? (Time.time >= nextStepTime)
+
+        if (inputMagnitude > 0.1f && isGrounded && Time.time >= nextStepTime)
+        {
+            // Play the sound
+            footstepAudio.Play();
+
+            // Reset the timer
+            // "Current Time" + "Delay" = "Time allowed for next step"
+            nextStepTime = Time.time + stepRate;
+        }
+    }
+    void LoadSuccessScene()
     {
         SceneManager.LoadScene("LastScene");
     }
@@ -90,34 +129,81 @@ public class Player : MonoBehaviour
         if (other.CompareTag("Finish"))
         {
             Debug.Log("Bomb Area Reached!");
-            bombsPlanted++;
-            ShowMessage();
-            Destroy(other.gameObject);
+            ShowBombMessage();
+        }
+        if (other.CompareTag("Ammo"))
+        {
+            Debug.Log("Ammo Crate found");
+            ShowAmmoMessage();
+        }
+        if (other.CompareTag("Health"))
+        {
+            Debug.Log("Health Pack found");
+            ShowHealthPackMessage();
+        }
+    }
+    void OnTriggerStay(Collider other)
+    {
+        if (other.CompareTag("Finish"))
+        {
+            
+            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
+            {
+                bombsPlanted++;
+                Destroy(other.gameObject);
+                HideMessage();
+            }
+                
+            
+            
         }
         
         if (other.CompareTag("Ammo"))
         {
-            
-            Debug.Log("Ammo Crate Collected!");
-            weapon.currentAmmo += ammoGainPerCrate;
-            if (weapon.currentAmmo > maxAmmo) weapon.currentAmmo = maxAmmo;
 
+
+            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
+            {
+                weapon.currentAmmo += ammoGainPerCrate;
+                Destroy(other.gameObject);
+                HideMessage() ;
+            }
+            if (weapon.currentAmmo > maxAmmo) 
+                weapon.currentAmmo = maxAmmo;
             weapon.UpdateAmmoUI();
+        }
+        if (other.CompareTag("Health"))
+        {
 
-            Destroy(other.gameObject);
+            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
+            {
+                health+=20;
+                Destroy(other.gameObject);
+                HideMessage();
+            }
+            if (health > maxHealth)
+                health = maxHealth;
+            UpdateHealthUI();
+
+
+
         }
     }
-    void ShowMessage()
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Finish") || other.CompareTag("Ammo") || other.CompareTag("Health"))
+        {
+            HideMessage();
+        }
+    }
+    void ShowBombMessage()
     {
         if (centerText != null)
         {
-            centerText.text = message;
+            centerText.text = BombMessage;
             centerText.enabled = true; 
 
-            if (autoHideTime > 0)
-            {
-                Invoke("HideMessage", autoHideTime);
-            }
+            
         }
     }
 
@@ -125,16 +211,86 @@ public class Player : MonoBehaviour
     {
         if (centerText != null) centerText.text = "";
     }
+    void ShowAmmoMessage()
+    {
+        if (centerText != null)
+        {
+            centerText.text = AmmoMessage;
+            centerText.enabled = true;
+
+            
+        }
+    }
+    void ShowHealthPackMessage()
+    {
+        if (centerText != null)
+        {
+            centerText.text = HealthPackMessage;
+            centerText.enabled = true;
+
+
+        }
+    }
+
+
     public void TakeDamage(float amount)
     {
         health -= amount;
-        if (health <= 0f)
+        if (health <= 0)
+        {
+            health = 0f;
+        }
+        UpdateHealthUI();
+        if (health == 0f)
         {
             Die();
         }
+        
     }
     void Die()
     {
-        Application.Quit();
+        GetComponent<Player>().enabled = false;
+        Camera.main.GetComponent<MouseMovement>().enabled = false;
+        GetComponentInChildren<WeaponLogic>().enabled = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        StartFadeToBlack();
+        Invoke("LoadFailureScene", autoHideTime-1);
+    }
+    void LoadFailureScene()
+    {
+        SceneManager.LoadScene("missionFailure");
+    }
+    public void StartFadeToBlack()
+    {
+        StartCoroutine(FadeRoutine());
+    }
+
+    IEnumerator FadeRoutine()
+    {
+        float timer = 0;
+        
+        while (timer < autoHideTime)
+        {
+            timer += Time.deltaTime;
+
+            // Math to smoothly go from Current Value -> 1.0 (Full Black)
+            float newIntensity = Mathf.Lerp(0f, 1.0f, timer / autoHideTime);
+            _vignette.intensity.value = newIntensity;
+
+            yield return null; // Wait for next frame
+        }
+
+        // Ensure it is perfectly black at the end
+        if (_vignette != null)
+            _vignette.intensity.value = 1.0f;
+        
+    }
+    public void UpdateHealthUI()
+    {
+        if (healthText != null)
+        {
+            healthText.text = "Player Health : " + health;
+        }
     }
 }

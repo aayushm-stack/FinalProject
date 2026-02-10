@@ -22,8 +22,10 @@ public class WeaponLogic : MonoBehaviour
     public int currentAmmo = 30;       // Starting bullets
     
 
-    private float autoHideTime=3f;
-
+    public float MsgAutoHideTime=4f;
+    public float fireDelay;
+    private float nextShotTime=0f;
+    public GameObject crosshair;
     [Header("UI Reference")]
     public TextMeshProUGUI ammoText;
     public TextMeshProUGUI OutOfAmmoText;
@@ -39,6 +41,11 @@ public class WeaponLogic : MonoBehaviour
 
         Transform target = isAiming ? adsPosition : hipPosition;
         float targetFOV = isAiming ? adsFOV : hipFOV;
+
+        if(isAiming)
+            crosshair.SetActive(false);
+        if (!isAiming)
+            crosshair.SetActive(true);
 
         Camera.main.fieldOfView = Mathf.SmoothDamp(
             Camera.main.fieldOfView,
@@ -84,9 +91,13 @@ public class WeaponLogic : MonoBehaviour
         
         if (currentAmmo > 0)
         {
-            PlayerShoot();
-            currentAmmo--;
-            UpdateAmmoUI();
+            if (Time.time >= nextShotTime)
+            {
+                PlayerShoot();
+                currentAmmo--;
+                UpdateAmmoUI();
+                nextShotTime= Time.time+fireDelay;
+            }
         }
         else
         {
@@ -99,7 +110,7 @@ public class WeaponLogic : MonoBehaviour
         {
             OutOfAmmoText.text = "Out of Ammunition !";
             OutOfAmmoText.enabled = true;
-            Invoke("HideMessage", autoHideTime);
+            Invoke("HideMessage", MsgAutoHideTime);
         }
     }
     void HideMessage()

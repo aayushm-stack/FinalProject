@@ -6,7 +6,7 @@ public class StorySceneController : MonoBehaviour
 {
     public void PlayGame()
     {
-        SceneManager.LoadScene("MainScene");
+        SceneManager.LoadScene("GameControls");
     }
 
     

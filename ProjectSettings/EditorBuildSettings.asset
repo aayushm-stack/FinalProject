@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Scenes/StoryScene.unity
     guid: 5861acefccb9f7a4c9aabd77629b7100
   - enabled: 1
+    path: Assets/Scenes/GameControls.unity
+    guid: 3aaaed9ca9de11743b3e1f36e4e5a8bb
+  - enabled: 1
     path: Assets/Scenes/MainScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
@@ -20,6 +23,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/missionSuccess.unity
     guid: eaed89d1cd868044d88531897e745193
+  - enabled: 1
+    path: Assets/Scenes/missionFailure.unity
+    guid: 67a40c415bca84b428574a16329fde6d
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: 0d031177ee1b1874dac632e6d849749b, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
