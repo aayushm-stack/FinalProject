@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Ammo
   - Health
+  - EnemyHead
+  - Enemy
   layers:
   - Default
   - TransparentFX

@@ -21,6 +21,8 @@ public class Enemy : MonoBehaviour
     //public Transform gunPoint;        // The tip of the gun (Raycast origin)
     public float damage = 10f;
     public float visualOffsetAngle = 0f;
+    public GameObject muzzleFlash;
+    public float showDuration = 0.5f;
 
     [Header("Animation Sync (Crucial)")]
     public float fireRate = 1.5f;     // Total length of your shoot animation clip
@@ -63,7 +65,7 @@ public class Enemy : MonoBehaviour
             if (Time.time >= nextFireTime)
             {
                 
-                ShootSequence();
+                StartCoroutine(ShootSequence());
                 nextFireTime = Time.time + fireRate; // Reset Cooldown
             }
         }
@@ -86,15 +88,16 @@ public class Enemy : MonoBehaviour
     }
 
     // The Sequence that matches your Animation
-    void ShootSequence()
+    IEnumerator ShootSequence()
     {
         //A.Start Animation
         animator.SetTrigger("Shoot"); // Assuming you use a Trigger. If using Bool, set it true here.
+        
 
         //B.Wait for the specific "Recoil" frame
-   
+
         //This is the magic line that syncs the damage with the visual kick
-   
+
         //yield return new WaitForSeconds(damageDelay);
 
         //C.Play Sound
@@ -102,6 +105,9 @@ public class Enemy : MonoBehaviour
 
         //D.Raycast Logic(The actual Shot)
         ShootRaycast();
+        muzzleFlash.SetActive(true);
+        yield return new WaitForSeconds(showDuration);
+        muzzleFlash.SetActive(false);
     }
 
 
@@ -131,19 +137,19 @@ public class Enemy : MonoBehaviour
             // Debug Line: See the laser in the Scene view
             Debug.DrawLine(startPoint, hit.point, Color.red, 1.0f);
 
-            //if (hit.transform.CompareTag("Player"))
-            //{
-            //    Debug.Log("Hit Player from Eye Sight!");
-            //    // Apply damage code here
-            //    hit.transform.GetComponent<Player>().TakeDamage(damage);
-            //}
-            Player player = hit.transform.GetComponentInParent<Player>();
-            
-            if (player != null)
+            if (hit.transform.CompareTag("Player"))
             {
-                Debug.Log("Hit: Player");
-                player.TakeDamage(damage);
+                Debug.Log("Hit Player from Eye Sight!");
+                // Apply damage code here
+                hit.transform.GetComponentInParent<Player>().TakeDamage(damage);
             }
+            //Player player = hit.transform.GetComponentInParent<Player>();
+
+            //if (player != null)
+            //{
+            //    Debug.Log("Hit: Player");
+            //    player.TakeDamage(damage);
+            //}
         }
     }
 

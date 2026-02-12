@@ -20,12 +20,13 @@ public class WeaponLogic : MonoBehaviour
     public float damage = 10f, range = 100f;
     
     public int currentAmmo = 30;       // Starting bullets
-    
+    public GameObject muzzleFlash;
 
     public float MsgAutoHideTime=4f;
     public float fireDelay;
     private float nextShotTime=0f;
     public GameObject crosshair;
+    public GameObject dirtImpactPrefab;
     [Header("UI Reference")]
     public TextMeshProUGUI ammoText;
     public TextMeshProUGUI OutOfAmmoText;
@@ -62,6 +63,8 @@ public class WeaponLogic : MonoBehaviour
     }
     void Update()
     {
+        if (PauseMenu.GameIsPaused) 
+            return;
         if (Input.GetMouseButtonDown(0))
         {
             Fire();
@@ -76,15 +79,45 @@ public class WeaponLogic : MonoBehaviour
         
         if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, range))
         {
-            
-            Enemy enemy = hit.transform.GetComponent<Enemy>();
+            StartCoroutine(ShowMuzzleFlash());
+            //Enemy enemy = hit.transform.GetComponent<Enemy>();
             Debug.Log("Hit: " + hit.transform.name);
-            if (enemy != null)
+            Enemy enemyScript = hit.transform.GetComponentInParent<Enemy>();
+            //if (enemy != null)
+            //{
+            //    enemy.TakeDamage(damage); 
+
+            //}
+            if (hit.transform.CompareTag("Enemy"))
             {
-                enemy.TakeDamage(damage); 
-                
+                Debug.Log("Hit: Enemy.");
+                // Apply damage code here
+                enemyScript.TakeDamage(damage);
+            }
+            if (hit.transform.CompareTag("EnemyHead"))
+            {
+                Debug.Log("Hit: Enemy. HeadShot!");
+                // Apply damage code here
+                ShowMessage("Head Shot !");
+                enemyScript.TakeDamage(3*damage);
+            }
+            if (!(hit.transform.CompareTag("Enemy")|| hit.transform.CompareTag("EnemyHead")))
+            {
+                // 1. Spawn the dust at the hit point
+                // Quaternion.LookRotation(hit.normal) makes the dust shoot OUT of the ground, not sideways.
+                GameObject impact = Instantiate(dirtImpactPrefab, hit.point, Quaternion.LookRotation(hit.normal));
+
+                // 2. Clean it up after 2 seconds
+                Destroy(impact, 2f);
             }
         }
+    }
+    public float showDuration = 0.5f;
+    IEnumerator ShowMuzzleFlash()
+    {
+        muzzleFlash.SetActive(true);
+        yield return new WaitForSeconds(showDuration);
+        muzzleFlash.SetActive(false);
     }
     void Fire()
     {
@@ -101,14 +134,14 @@ public class WeaponLogic : MonoBehaviour
         }
         else
         {
-            ShowMessage();
+            ShowMessage("Out of Ammunition !");
         }
     }
-    void ShowMessage()
+    void ShowMessage(string s)
     {
         if (OutOfAmmoText != null)
         {
-            OutOfAmmoText.text = "Out of Ammunition !";
+            OutOfAmmoText.text = s;
             OutOfAmmoText.enabled = true;
             Invoke("HideMessage", MsgAutoHideTime);
         }
@@ -122,7 +155,7 @@ public class WeaponLogic : MonoBehaviour
     {
         if (ammoText != null)
         { 
-            ammoText.text = "Ammo Count: " + currentAmmo;
+            ammoText.text = "Ammo Count : " + currentAmmo;
         }
     }
 }
