@@ -11,7 +11,7 @@ public class IntroManager : MonoBehaviour
     public GameObject realPlayer;          
 
     [Header("Settings")]
-    public float cutsceneDuration = 1f; 
+    public float cutsceneDuration = 0.8f; 
 
     void Start()
     { 

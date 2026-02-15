@@ -12,7 +12,8 @@ public class MissionSuccessController : MonoBehaviour
         voiceOverSource.Play();
         await Task.Delay(300);  //second way for delay
         voiceOverSource.Play();
-
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
     public void CloseApplication()
     {

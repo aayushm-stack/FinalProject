@@ -2,6 +2,7 @@ using JetBrains.Annotations;
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using System.Threading.Tasks;
 using UnityEngine.SceneManagement;
 using UnityEngine.Rendering;                 // Required for Volumes
 using UnityEngine.Rendering.Universal;
@@ -26,7 +27,8 @@ public class Player : MonoBehaviour
     public AudioSource footstepAudio; // Drag your AudioSource here
     public float stepRate = 0.5f;     // Delay between steps (0.5 = walking, 0.3 = running)
     private float nextStepTime = 0f;  // Internal timer
-    [TextArea] public string BombMessage = "Bomb Location reached !"; // Custom message for this specific collider
+    [TextArea] public string Bomb1msg = "Bomb 1 Location reached !"; // Custom message for this specific collider
+    public string Bomb2msg = "Bomb 2 Location reached !";
     public string AmmoMessage = "Ammunition Found !";
     public string HealthPackMessage = "Health Pack Found !";
     public int maxAmmo = 100;          // Maximum limit
@@ -35,6 +37,18 @@ public class Player : MonoBehaviour
     [Header("ScreenFader")]
     public Volume globalVolume;
     private Vignette _vignette;
+    public float AnimationDuration=1f;
+    [Header("CamerasForCutscene")]
+    public GameObject Camera1;
+    public GameObject Camera2;
+    public GameObject mainCamera;
+
+    [Header("ActorsForCutscene")]
+    public GameObject cutscenePlayer1;
+    public GameObject cutscenePlayer2;
+    public GameObject realPlayer;
+
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -54,21 +68,21 @@ public class Player : MonoBehaviour
 
         if (isGrounded && velocity.y < 0f) // to attach player to ground
             velocity.y = -2f;
-        
+
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
 
         //Camera initial --- Vector3 move = transform.right*x + transform.forward*z;
 
-        Vector3 forward = cameraTransform.forward; 
+        Vector3 forward = cameraTransform.forward;
         Vector3 right = cameraTransform.right;
         forward.y = 0f;
         right.y = 0f;
         Vector3 move = forward.normalized * z + right.normalized * x;
-        
+
         controller.Move(move * speed * Time.deltaTime);
 
-        if (Input.GetButtonDown("Jump") && isGrounded) 
+        if (Input.GetButtonDown("Jump") && isGrounded)
             velocity.y = Mathf.Sqrt(jumpHeight * 2f * gravity);
 
         velocity.y -= gravity * Time.deltaTime;
@@ -83,15 +97,15 @@ public class Player : MonoBehaviour
         //    isMoving = false;
 
         //lastPosition=gameObject.transform.position;
-
-        
+    }
+    void Exit() 
+    { 
 
         if (bombsPlanted == 2)
         {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            
 
-            Invoke("LoadSuccessScene", autoHideTime);
+            Invoke("LoadSuccessScene", 3f);
         }
     }
     void HandleFootsteps()
@@ -126,10 +140,15 @@ public class Player : MonoBehaviour
     public WeaponLogic weapon;
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Finish"))
+        if (other.CompareTag("Finish1"))
         {
-            Debug.Log("Bomb Area Reached!");
-            ShowBombMessage();
+            Debug.Log("Bomb Area 1 Reached!");
+            ShowBombMessage(Bomb1msg);
+        }
+        if (other.CompareTag("Finish2"))
+        {
+            Debug.Log("Bomb Area 2 Reached!");
+            ShowBombMessage(Bomb2msg);
         }
         if (other.CompareTag("Ammo"))
         {
@@ -144,7 +163,7 @@ public class Player : MonoBehaviour
     }
     void OnTriggerStay(Collider other)
     {
-        if (other.CompareTag("Finish"))
+        if (other.CompareTag("Finish1"))
         {
             
             if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
@@ -152,12 +171,27 @@ public class Player : MonoBehaviour
                 bombsPlanted++;
                 Destroy(other.gameObject);
                 HideMessage();
+                BombCutscene1();
             }
-                
+            
             
             
         }
-        
+        if (other.CompareTag("Finish2"))
+        {
+
+            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
+            {
+                bombsPlanted++;
+                Destroy(other.gameObject);
+                HideMessage();
+                BombCutscene2();
+            }
+
+
+
+        }
+
         if (other.CompareTag("Ammo"))
         {
 
@@ -191,16 +225,46 @@ public class Player : MonoBehaviour
     }
     void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Finish") || other.CompareTag("Ammo") || other.CompareTag("Health"))
+        if (other.CompareTag("Finish1") || other.CompareTag("Finish2") || other.CompareTag("Ammo") || other.CompareTag("Health"))
         {
             HideMessage();
         }
     }
-    void ShowBombMessage()
+    async void BombCutscene1()
+    {
+        mainCamera.SetActive(false);
+        realPlayer.SetActive(false);
+        Camera1.SetActive(true);
+        cutscenePlayer1.SetActive(true);
+        //yield return new WaitForSeconds(AnimationDuration);
+        await Task.Delay(4000);
+        Camera1.SetActive(false);
+        cutscenePlayer1.SetActive(false);
+        mainCamera.SetActive(true);
+        realPlayer.SetActive(true);
+        await Task.Delay(1500);
+        Exit();
+    }
+    async void BombCutscene2()
+    {
+        mainCamera.SetActive(false);
+        realPlayer.SetActive(false);
+        Camera2.SetActive(true);
+        cutscenePlayer2.SetActive(true);
+        //yield return new WaitForSeconds(AnimationDuration);
+        await Task.Delay(4000);
+        Camera2.SetActive(false);
+        cutscenePlayer2.SetActive(false);
+        mainCamera.SetActive(true);
+        realPlayer.SetActive(true);
+        await Task.Delay(1500);
+        Exit();
+    }
+    void ShowBombMessage(string msg)
     {
         if (centerText != null)
         {
-            centerText.text = BombMessage;
+            centerText.text = msg;
             centerText.enabled = true; 
 
             

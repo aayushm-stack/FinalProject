@@ -8,6 +8,8 @@ TagManager:
   - Health
   - EnemyHead
   - Enemy
+  - Finish1
+  - Finish2
   layers:
   - Default
   - TransparentFX
